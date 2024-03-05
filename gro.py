@@ -63,6 +63,15 @@ class GFrame:
     
     @classmethod
     def _parse(cls, f):
+        """Reads opened *.gro filestream and returns topology of the system
+
+        Args:
+            f (FileIO): descriptor of opened file
+
+        Returns:
+            tuple(np.array, dict): `xyz` array of coordinates and topology of the system: atomic numbers `z`, names of the residues, 
+            their location (indices across `xyz` and `z`)
+        """
         n_atoms = int(f.readline().strip())
         residues = []
         res_ = ''
@@ -171,16 +180,11 @@ class GFrame:
         molecules = [molecule.center(xyz0, self.box) for molecule in self.molecules]
         return molecules
     
-    def neighbours(self, idx, dist):
+    def closest_atoms(self, idx, dist, idx_atom=0):
         """ For the selected molecule (`idx`), find all neighbours within a specific distance `dist`.
             The molecule is a neighbour, if at least one atom is closer than `dist` from any atom of the selected molecule.
-            The entire neighbor is included into an output.
+            The entire neighbor is included into an output. Output system is centered so that idx_atom is [0.0, 0.0, 0.0]
         """
-        if isinstance(idx, tuple) or isinstance(idx, list):
-            assert len(idx) == 2, 'first argument must be a list or a tuple with 2 values only'
-            idx, idx_atom = idx
-        else:
-            idx_atom = 0
         sub = [idx]
         molecules = self.center(idx, idx_atom)
         xyz0 = molecules[idx].xyz
@@ -190,18 +194,16 @@ class GFrame:
                 d = cdist(xyz0, xyz1).ravel()
                 if d.min() < dist:
                     sub.append(j)
-        return type(self)([molecules[i] for i in sub])
-
+        new = type(self)([molecules[i] for i in sub])
+        new.box = self.box
+        return new
     
-    def neighbours3(self, idx, dist: dict):
+    def neighbourhood(self, idx, dist: dict, idx_atom=0):
         """Finds all the molecules fully within a given distance `dist` from the molecule `idx`. 
-        `dist` can be set different for each molecule type (via using dict)
-        If idx is a list or tuple of 2, output is centred on specific atom of a selected molecule"""
-        if isinstance(idx, tuple) or isinstance(idx, list):
-            assert len(idx) == 2, 'first argument must be a list or a tuple with 2 values only'
-            idx, idx_atom = idx
-        else:
-            idx_atom = 0
+        `dist` can be set different for each molecule type (via using dict).
+        Output system is centered so that idx_atom is [0.0, 0.0, 0.0]
+        TODO: add possibility to specify molecule by its name
+        """
         sub = [idx]
         molecules = self.center(idx, idx_atom)
         xyz0 = molecules[idx].xyz
@@ -216,7 +218,9 @@ class GFrame:
                     d_threshold = dist.get(molname) or 0
                 if all(d.min(axis=0) < d_threshold):
                     sub.append(j)
-        return type(self)([molecules[i] for i in sub])
+        new = type(self)([molecules[i] for i in sub])
+        new.box = self.box
+        return new
     
     def to_xyz(self, filename=None, comment=''):
         """Prepare for output"""
@@ -224,26 +228,23 @@ class GFrame:
         xyz = self.xyz
         z = self.z
         n = len(z)
-        out = []
-        out.append(str(n))
-        out.append('# ' + comment + ' #MOL=' + names)
+        lines = [str(n), '# ' + comment + ' #MOL=' + names]
         for j in range(n):
-            out.append(f'{z[j]:3d}{xyz[j, 0]:8.3f}{xyz[j, 1]:8.3f}{xyz[j, 2]:8.3f}')
+            lines.append(f'{z[j]:3d}{xyz[j, 0]:8.3f}{xyz[j, 1]:8.3f}{xyz[j, 2]:8.3f}')
         if filename is None:
-            for line in out:
+            for line in lines:
                 print(line)
         elif isinstance(filename, str):
             if not filename.endswith('xyz'):
                 filename = filename + '.xyz'
             with open(filename, 'w') as f:
-                for line in out:
+                for line in lines:
                     print(line, file=f)
     
     def to_gro(self, filename=None, comment=''):
-        out  = []
-        out.append(comment)
+        """Saves gro object into *gro  legacy format. Note that coordinates are in nm not angstrom. """
         n = len(self.z)
-        out.append(str(n))
+        lines  = [comment, str(n)]
         atom_idx = 0
         for molecule in self.molecules:
             molecule_idx =  molecule.index
@@ -255,15 +256,15 @@ class GFrame:
                 atom_name = f'{_CHARGES[z[j]]}{j+1}'
                 xyz_ = xyz[j]
                 s = f'{molecule_idx:>5}{molecule_name:<5}{atom_name:>5}{atom_idx:>5}{0.1*xyz_[0]:8.3f}{0.1*xyz_[1]:8.3f}{0.1*xyz_[2]:8.3f}'
-                out.append(s)
-        box = self.box or 10
-        out.append(f'{0.1*box:8.3f}{0.1*box:8.3f}{0.1*box:8.3f}')
+                lines.append(s)
+        box = 10 if self.box is None else self.box[0] 
+        lines.append(f'{0.1*box:8.3f}{0.1*box:8.3f}{0.1*box:8.3f}')
         if filename is None:
-            for line in out:
+            for line in lines:
                 print(line)
             return
         with open(filename, 'w') as f:
-            for line in out:
+            for line in lines:
                 print(line, file=f)
         
     
