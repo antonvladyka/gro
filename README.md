@@ -43,7 +43,7 @@ Individual gromacs snapshot
     ## neighbours are the molecules such that all atoms are within given distance threshold from the target
     ## resulting system is centered at atom #6 of the molecule #10 (convenient for visualization or spectral
     ## calculations)
-    nei = gro.neighbours3((10, 6), dist={'SOL': 5, 'LIG': 7.5})
+    nei = gro.neighbourshood(10, dist={'SOL': 5, 'LIG': 7.5}, center_at=6)
     nei.to_xyz() # prints the content of the system
     nei.to_xyz(filename=<>) # saves .xyz file
 

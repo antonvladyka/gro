@@ -180,13 +180,13 @@ class GFrame:
         molecules = [molecule.center(xyz0, self.box) for molecule in self.molecules]
         return molecules
     
-    def closest_atoms(self, idx, dist, idx_atom=0):
+    def closest_atoms(self, idx, dist, center_at=0):
         """ For the selected molecule (`idx`), find all neighbours within a specific distance `dist`.
             The molecule is a neighbour, if at least one atom is closer than `dist` from any atom of the selected molecule.
             The entire neighbor is included into an output. Output system is centered so that idx_atom is [0.0, 0.0, 0.0]
         """
         sub = [idx]
-        molecules = self.center(idx, idx_atom)
+        molecules = self.center(idx, center_at)
         xyz0 = molecules[idx].xyz
         for j in range(self.n_molecules):
             if j != idx:
@@ -198,14 +198,14 @@ class GFrame:
         new.box = self.box
         return new
     
-    def neighbourhood(self, idx, dist: dict, idx_atom=0):
+    def neighbourhood(self, idx, dist: dict, center_at=0):
         """Finds all the molecules fully within a given distance `dist` from the molecule `idx`. 
         `dist` can be set different for each molecule type (via using dict).
         Output system is centered so that idx_atom is [0.0, 0.0, 0.0]
         TODO: add possibility to specify molecule by its name
         """
         sub = [idx]
-        molecules = self.center(idx, idx_atom)
+        molecules = self.center(idx, center_at)
         xyz0 = molecules[idx].xyz
         for j in range(self.n_molecules):
             if j != idx:
