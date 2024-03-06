@@ -274,10 +274,21 @@ class GFrame:
     
     
 class GTrajectory:
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
+        """Loads trajectory from trr and gro files.
+        Arguments options:
+            - 1 positional agrument: single *.gro
+            - 2 positional arguments: *.trr & *.gro
+            - 'file_trr'
+            - 'file_gro':
+        """
         self.snapshots = []
         self.t = []
-        if kwargs.get('file_gro'):
+        if len(args) == 2:
+            self.from_trr(file_trr=args[0], file_gro=args[1])
+        elif len(args == 1):
+            self.from_gro(file_gro=args[1])
+        elif kwargs.get('file_gro'):
             if kwargs.get('file_trr'):
                 self.from_trr(file_trr=kwargs['file_trr'], file_gro=kwargs['file_gro'])
             else:

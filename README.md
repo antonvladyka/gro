@@ -43,11 +43,11 @@ Individual gromacs snapshot
     ## neighbours are the molecules such that all atoms are within given distance threshold from the target
     ## resulting system is centered at atom #6 of the molecule #10 (convenient for visualization or spectral
     ## calculations)
-    nei = gro.neighbourshood(10, dist={'SOL': 5, 'LIG': 7.5}, center_at=6)
+    nei = gro.neighbourhood(10, dist={'SOL': 5, 'LIG': 7.5}, center_at=6)
     nei.to_xyz() # prints the content of the system
     nei.to_xyz(filename=<>) # saves .xyz file
 
-Trajectory (requires also gro file, since trajectorry file containes only coordinates, timing, box size, but ton atomic numbers)
+Trajectory (requires also gro file, since trajectorry file containes only coordinates, timing, box size, but not atomic numbers)
     
     file_trr = 'md.trr'
     file_gro = 'md.gro'
